@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI画像生成ビルダー | Prompt Builder Suite</title>
+<style>
+:root {
+  --bg:#0f0f13; --surface:#1a1a22; --border:#2a2a38;
+  --text:#e8e4f0; --muted:#8880a0; --chip:#22222e;
+  --face:#f0a0c0; --outfit:#f0c060; --pose:#60c4e8; --bgAccent:#a8d880; --ws:#a0c8f0;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0; min-height:100vh; background:var(--bg); color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,"Hiragino Sans","Yu Gothic",sans-serif;
+}
+header {
+  border-bottom:1px solid var(--border); padding:18px 24px;
+  background:rgba(15,15,19,.97); backdrop-filter:blur(8px);
+}
+.header-inner { max-width:760px; margin:0 auto; display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
+.site-title { font-size:20px; font-weight:700; letter-spacing:.08em; color:var(--text); }
+.site-sub { font-size:11px; color:var(--muted); letter-spacing:.16em; text-transform:uppercase; }
+.ver-badge { font-size:10px; font-weight:700; color:var(--ws); border:1px solid var(--ws); border-radius:999px; padding:2px 9px; letter-spacing:.08em; }
+
+main { max-width:760px; margin:0 auto; padding:36px 20px 80px; }
+
+.hero {
+  margin-bottom:32px; padding:26px 24px;
+  background:var(--surface); border:1px solid var(--border); border-radius:14px;
+}
+.hero-label { font-size:10px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); margin-bottom:14px; }
+.flow-row { display:flex; align-items:center; flex-wrap:wrap; gap:6px; }
+.flow-step { font-size:12px; padding:5px 12px; border-radius:999px; font-weight:600; border:1px solid; }
+.flow-arrow { color:var(--muted); font-size:12px; }
+.hero-desc { font-size:13px; color:var(--muted); line-height:1.8; margin:14px 0 0; }
+
+.usage-note {
+  background:var(--chip); border:1px solid var(--border); border-radius:10px;
+  padding:12px 16px; margin-bottom:32px; font-size:12px; color:var(--muted); line-height:1.8;
+}
+.usage-note b { color:var(--text); font-weight:600; }
+
+.section-title { font-size:10px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); margin-bottom:14px; }
+
+.tool-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:12px; margin-bottom:32px; }
+.tool-card {
+  display:block; text-decoration:none; background:var(--surface); border:1px solid var(--border);
+  border-radius:12px; padding:18px 20px; transition:border-color .18s, transform .15s, background .18s;
+  position:relative; overflow:hidden;
+}
+.tool-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--card-accent); }
+.tool-card:hover { border-color:var(--card-accent); background:#1d1d27; transform:translateY(-2px); }
+.card-tag { font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--card-accent); margin-bottom:8px; }
+.card-name { font-size:16px; font-weight:700; color:var(--text); margin-bottom:6px; letter-spacing:.03em; }
+.card-name-sub { font-size:11px; color:var(--muted); font-weight:400; letter-spacing:.06em; }
+.card-desc { font-size:12px; color:var(--muted); line-height:1.7; margin:0; }
+.card-arrow { position:absolute; right:18px; top:50%; transform:translateY(-50%); font-size:16px; color:var(--card-accent); opacity:.5; }
+.tool-card:hover .card-arrow { opacity:1; }
+
+.tool-card.ws { grid-column:1 / -1; display:flex; align-items:center; gap:20px; padding:20px 24px; }
+.tool-card.ws .card-body { flex:1; }
+.tool-card.ws .card-arrow { position:static; transform:none; }
+
+.foot-note { background:var(--chip); border:1px solid var(--border); border-radius:10px; padding:14px 18px; font-size:12px; color:var(--muted); line-height:1.8; }
+.foot-note b { color:var(--text); font-weight:600; }
+.foot-note code { background:rgba(0,0,0,.3); padding:1px 6px; border-radius:4px; font-size:11px; }
+.v1-link { color:var(--muted); text-decoration:underline; }
+.v1-link:hover { color:var(--text); }
+
+@media (max-width:520px) {
+  .tool-grid { grid-template-columns:1fr; }
+  .tool-card.ws { flex-direction:column; align-items:flex-start; }
+  .flow-row { gap:4px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <span class="site-title">AI画像生成ビルダー</span>
+    <span class="site-sub">Prompt Builder Suite</span>
+    <span class="ver-badge">v2</span>
+  </div>
+</header>
+
+<main>
+
+  <div class="hero">
+    <div class="hero-label">使い方の流れ</div>
+    <div class="flow-row">
+      <span class="flow-step" style="color:var(--face); border-color:var(--face);">① キャラ・顔</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-step" style="color:var(--outfit); border-color:var(--outfit);">② 衣装</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-step" style="color:var(--pose); border-color:var(--pose);">③ ポーズ</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-step" style="color:var(--bgAccent); border-color:var(--bgAccent);">④ 背景</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-step" style="color:var(--ws); border-color:var(--ws);">⑤ 作業台</span>
+    </div>
+    <p class="hero-desc">各ビルダーでプロンプトを組み立て、出力タブの「作業台へ送って開く」を押すと、作業台に自動で受け渡されます。最後に品質タグ・強化タグを足して最終プロンプトを生成します。</p>
+  </div>
+
+  <div class="usage-note">
+    <b>対応AIについて：</b>PIXai での利用を想定していますが、タグはカンマ区切りの汎用形式なので、他の画像生成AIでもプロンプト作成の補助として使えます。
+  </div>
+
+  <div class="section-title">Builders</div>
+  <div class="tool-grid">
+
+    <a class="tool-card" href="character-builder.html" style="--card-accent:var(--face)">
+      <div class="card-tag">Step 1 · Character</div>
+      <div class="card-name">キャラ・顔 <span class="card-name-sub">Character / Face</span></div>
+      <p class="card-desc">性別・体格・顔立ち・表情・髪・肌・メイク・キャラの雰囲気を構成。プリセット16種＋保存対応。</p>
+      <span class="card-arrow">›</span>
+    </a>
+
+    <a class="tool-card" href="outfit-builder.html" style="--card-accent:var(--outfit)">
+      <div class="card-tag">Step 2 · Outfit</div>
+      <div class="card-name">衣装 <span class="card-name-sub">Outfit</span></div>
+      <p class="card-desc">メイン衣装・靴・タイツ・手袋・帽子・装飾品・素材・衣装テーマを細かく指定。</p>
+      <span class="card-arrow">›</span>
+    </a>
+
+    <a class="tool-card" href="pose-builder.html" style="--card-accent:var(--pose)">
+      <div class="card-tag">Step 3 · Pose</div>
+      <div class="card-name">ポーズ・構図 <span class="card-name-sub">Pose / Composition</span></div>
+      <p class="card-desc">画角・カメラアングル・体の向き・視線・ポーズ・手・小道具・構図を組み合わせ。</p>
+      <span class="card-arrow">›</span>
+    </a>
+
+    <a class="tool-card" href="background-builder.html" style="--card-accent:var(--bgAccent)">
+      <div class="card-tag">Step 4 · Background</div>
+      <div class="card-name">背景 <span class="card-name-sub">Background</span></div>
+      <p class="card-desc">場所・時間帯・天気・光源・色調・雰囲気・背景要素を指定。室内／屋外／ファンタジーまで。</p>
+      <span class="card-arrow">›</span>
+    </a>
+
+  </div>
+
+  <div class="section-title">Workspace</div>
+  <div class="tool-grid">
+    <a class="tool-card ws" href="workspace.html" style="--card-accent:var(--ws)">
+      <div class="card-body">
+        <div class="card-tag">Step 5 · Workspace</div>
+        <div class="card-name">作業台 <span class="card-name-sub">Workspace</span></div>
+        <p class="card-desc">各ビルダーの出力を集約し、品質タグ・強化タグを足して最終プロンプトを生成。重複タグの自動除去とセット保存に対応。ビルダーから送られたプロンプトは自動で対応欄に読み込まれます。</p>
+      </div>
+      <span class="card-arrow" style="font-size:22px;">›</span>
+    </a>
+  </div>
+
+  <div class="foot-note">
+    <b>おセンシ対策について：</b>PIXai で判定が厳しめの英語表現（例：<code>bust-up</code>→<code>upper body portrait</code>、<code>seductive eyes</code>→<code>alluring eyes</code> など）は、あらかじめ安全寄りのタグに調整済みです。<br>
+    <span style="display:inline-block; margin-top:8px;">旧バージョンは <a class="v1-link" href="../v1/">v1（こちら）</a> に残しています。</span>
+  </div>
+
+</main>
+</body>
+</html>
