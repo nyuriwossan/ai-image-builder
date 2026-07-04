@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PIXai Prompt Workspace</title>
+<style>
+:root {
+  --bg:#0f0f13; --surface:#1a1a22; --border:#2a2a38; --text:#e8e4f0; --textMuted:#8880a0; --chip:#22222e;
+  --faceAccent:#f0a0c0; --outfitAccent:#f0c060; --poseAccent:#60c4e8; --bgAccent:#a8d880; --mellowAccent:#b8a0ff;
+  --correction:#80d4b0; --wsAccent:#a0c8f0;
+}
+* { box-sizing:border-box; }
+body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font-family:"Helvetica Neue",Arial,"Hiragino Sans",sans-serif; }
+header { border-bottom:1px solid var(--border); padding:18px 24px; position:sticky; top:0; background:var(--bg); z-index:10; }
+.header-inner { max-width:800px; margin:0 auto; display:flex; align-items:center; gap:12px; }
+.logo { font-size:22px; font-weight:700; letter-spacing:.06em; color:var(--wsAccent); }
+.logo-sub { font-size:12px; color:var(--textMuted); letter-spacing:.12em; text-transform:uppercase; flex:1; }
+.main { max-width:800px; margin:0 auto; padding:28px 24px 80px; }
+.card, .card-face, .card-outfit, .card-pose, .card-bg, .card-enhance, .card-final {
+  border-radius:12px; padding:16px 18px; margin-bottom:14px;
+}
+.card { background:var(--surface); border:1px solid var(--border); }
+.card-final { background:var(--surface); border:2px solid var(--wsAccent); }
+.card-face { background:#1e1018; border:1px solid color-mix(in srgb, var(--faceAccent) 27%, transparent); }
+.card-outfit { background:#1e1a08; border:1px solid color-mix(in srgb, var(--outfitAccent) 27%, transparent); }
+.card-pose { background:#081820; border:1px solid color-mix(in srgb, var(--poseAccent) 27%, transparent); }
+.card-bg { background:#101808; border:1px solid color-mix(in srgb, var(--bgAccent) 27%, transparent); }
+.card-enhance { background:#0e1820; border:1px solid color-mix(in srgb, var(--wsAccent) 27%, transparent); }
+.section-label { display:flex; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
+.label { font-size:11px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--textMuted); }
+.source-tag { font-size:10px; border-radius:10px; padding:1px 8px; font-weight:600; border:1px solid transparent; }
+.note { font-size:11px; color:var(--textMuted); margin:0 0 10px; line-height:1.6; }
+.textarea, .input, .final-textarea {
+  width:100%; background:rgba(0,0,0,.3); border:1px solid var(--border); border-radius:8px; color:var(--text);
+  font-size:13px; line-height:1.7; padding:10px 12px; resize:vertical; outline:none; font-family:inherit;
+}
+.textarea { min-height:70px; }
+.final-textarea { min-height:100px; border:none; font-family:"Fira Code",monospace; }
+.chip-row { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:4px; }
+.chip, .quality-chip, .save-toggle, .reset-btn, .load-btn, .delete-btn, .copy-btn, .save-btn, .cancel-btn {
+  cursor:pointer; font-family:inherit;
+}
+.chip, .quality-chip, .save-toggle {
+  background:var(--chip); border:1px solid var(--border); border-radius:20px; padding:6px 13px; color:var(--textMuted); font-size:12px;
+}
+.chip.active, .quality-chip.active { background:#0e1828; border-color:var(--wsAccent); color:var(--wsAccent); font-weight:600; }
+.reset-btn, .cancel-btn {
+  background:transparent; border:1px solid var(--border); border-radius:6px; padding:5px 14px; color:var(--textMuted); font-size:12px;
+}
+.copy-btn, .save-btn {
+  background:var(--wsAccent); border:none; border-radius:8px; padding:9px 18px; color:#0f0f13; font-size:13px; font-weight:700;
+}
+.copy-btn.done { background:#5a7a90; color:#fff; }
+.output-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:12px; }
+.divider { border-top:1px solid var(--border); margin:20px 0; }
+.enhance-group { margin-bottom:14px; }
+.enhance-group-label { font-size:10px; color:var(--textMuted); font-weight:600; letter-spacing:.1em; text-transform:uppercase; margin-bottom:6px; }
+.tag-badge { background:#0e1828; border:1px solid color-mix(in srgb, var(--wsAccent) 27%, transparent); border-radius:20px; padding:3px 10px; color:color-mix(in srgb, var(--wsAccent) 80%, white 20%); font-size:11px; }
+.save-row { display:flex; gap:8px; margin-bottom:14px; align-items:center; }
+.saved-list { display:flex; flex-direction:column; gap:8px; }
+.saved-item { background:rgba(0,0,0,.2); border:1px solid var(--border); border-radius:8px; padding:10px 14px; display:flex; align-items:center; gap:8px; }
+.saved-name { flex:1; font-size:13px; color:var(--text); }
+.saved-date { font-size:10px; color:var(--textMuted); }
+.load-btn { background:transparent; border:1px solid color-mix(in srgb, var(--wsAccent) 35%, transparent); border-radius:6px; padding:4px 10px; color:var(--wsAccent); font-size:11px; }
+.delete-btn { background:transparent; border:none; color:var(--textMuted); font-size:12px; padding:4px 6px; }
+.home-link { font-size:11px; color:var(--textMuted); text-decoration:none; border:1px solid var(--border); border-radius:6px; padding:4px 10px; white-space:nowrap; }
+.home-link:hover { color:var(--wsAccent); border-color:var(--wsAccent); }
+@media (max-width: 600px) {
+  .output-header, .save-row, .saved-item { flex-direction:column; align-items:stretch; }
+  .saved-date { order:3; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <a class="home-link" href="index.html">← Top</a>
+    <span class="logo">Workspace</span>
+    <span class="logo-sub">PIXai Prompt Workspace</span>
+    <button class="reset-btn" id="resetBtn">リセット</button>
+  </div>
+</header>
+<main class="main">
+  <div class="card">
+    <div class="section-label">
+      <span class="label">① 品質タグ</span>
+      <span class="source-tag" style="background: color-mix(in srgb, var(--wsAccent) 13%, transparent); color:var(--wsAccent); border-color: color-mix(in srgb, var(--wsAccent) 27%, transparent);">Quality</span>
+    </div>
+    <div class="chip-row" id="qualityRow"></div>
+    <div id="qualityPreview" class="note" style="margin-top:8px; font-family:monospace;"></div>
+  </div>
+
+  <div class="card">
+    <div class="section-label">
+      <span class="label">② 追加タグ / 自由入力</span>
+      <span class="source-tag" style="background: color-mix(in srgb, var(--wsAccent) 13%, transparent); color:var(--wsAccent); border-color: color-mix(in srgb, var(--wsAccent) 27%, transparent);">Custom</span>
+    </div>
+    <p class="note">solo, 1boy, upper body など固定で入れたいタグをカンマ区切りで。</p>
+    <textarea class="textarea" id="additionalTags" rows="2" placeholder="例：solo, 1boy, upper body, portrait"></textarea>
+  </div>
+
+  <div class="card-face">
+    <div class="section-label">
+      <span class="label">③ キャラ・顔 Prompt</span>
+      <span class="source-tag" style="background: color-mix(in srgb, var(--faceAccent) 13%, transparent); color:var(--faceAccent); border-color: color-mix(in srgb, var(--faceAccent) 27%, transparent);">Face PB</span>
+    </div>
+    <p class="note">Character / Face Prompt Builder の出力欄です。顔・体格・表情・髪・肌・メイク・キャラ雰囲気を貼ります。</p>
+    <textarea class="textarea" id="characterPrompt" rows="3" style="border-color: color-mix(in srgb, var(--faceAccent) 20%, var(--border));" placeholder="例：androgynous, young man, slender body, refined face, gray eyes, subtle smile, short hair, dark brown hair..."></textarea>
+  </div>
+
+  <div class="card-outfit">
+    <div class="section-label">
+      <span class="label">④ 衣装 Prompt</span>
+      <span class="source-tag" style="background: color-mix(in srgb, var(--outfitAccent) 13%, transparent); color:var(--outfitAccent); border-color: color-mix(in srgb, var(--outfitAccent) 27%, transparent);">Outfit PB</span>
+    </div>
+    <p class="note">Outfit Prompt Builder の出力欄です。服・靴・タイツ・手袋・装飾・素材・色・衣装テーマを貼ります。</p>
+    <textarea class="textarea" id="outfitPrompt" rows="3" style="border-color: color-mix(in srgb, var(--outfitAccent) 20%, var(--border));" placeholder="例：black, suit, dress shirt, necktie, leather shoes, elegant outfit..."></textarea>
+  </div>
+
+  <div class="card-pose">
+    <div class="section-label">
+      <span class="label">⑤ ポーズ・構図 Prompt</span>
+      <span class="source-tag" style="background: color-mix(in srgb, var(--poseAccent) 13%, transparent); color:var(--poseAccent); border-color: color-mix(in srgb, var(--poseAccent) 27%, transparent);">Pose PB</span>
+    </div>
+    <p class="note">Pose &amp; Composition Prompt Builder の出力欄です。画角・カメラ・体の向き・視線・ポーズ・手・小道具・構図を貼ります。</p>
+    <textarea class="textarea" id="posePrompt" rows="3" style="border-color: color-mix(in srgb, var(--poseAccent) 20%, var(--border));" placeholder="例：upper body, three-quarter view, slightly turned, looking at viewer, standing, hand on chin, balanced composition..."></textarea>
+  </div>
+
+  <div class="card-bg">
+    <div class="section-label">
+      <span class="label">⑥ 背景 Prompt</span>
+      <span class="source-tag" style="background: color-mix(in srgb, var(--bgAccent) 13%, transparent); color:var(--bgAccent); border-color: color-mix(in srgb, var(--bgAccent) 27%, transparent);">BG PB</span>
+    </div>
+    <p class="note">Background Prompt Builder の出力欄です。場所・時間・天気・光・色調・雰囲気・背景要素を貼ります。</p>
+    <textarea class="textarea" id="backgroundPrompt" rows="3" style="border-color: color-mix(in srgb, var(--bgAccent) 20%, var(--border));" placeholder="例：indoors, office, night, dramatic lighting, cool color palette, quiet atmosphere..."></textarea>
+  </div>
+
+  <div class="card-enhance">
+    <div class="section-label">
+      <span class="label">⑦ 強化タグ</span>
+      <span class="source-tag" style="background: color-mix(in srgb, var(--wsAccent) 13%, transparent); color:var(--wsAccent); border-color: color-mix(in srgb, var(--wsAccent) 27%, transparent);">Enhancement</span>
+    </div>
+    <p class="note">盛りすぎ注意。必要な箇所だけを選ぶのがおすすめ。</p>
+    <div id="enhanceArea"></div>
+    <div class="chip-row" id="enhanceSelected" style="margin-top:4px;"></div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="card-final">
+    <div class="output-header">
+      <div>
+        <span class="label" style="color:var(--wsAccent)">⑧ Final Positive Prompt</span>
+        <p class="note" style="margin-top:6px; margin-bottom:0;">重複タグは自動除去されます。</p>
+      </div>
+      <button class="copy-btn" id="copyBtn">コピー</button>
+    </div>
+    <textarea class="final-textarea" id="finalPrompt" readonly>（各欄を入力するとここに Final Prompt が出力されます）</textarea>
+  </div>
+
+  <div class="card">
+    <div class="section-label">
+      <span class="label">⑨ 保存済みセット</span>
+    </div>
+    <p class="note">入力欄ごとのセット保存。完成した組み合わせを再利用できます。</p>
+    <button class="save-toggle" id="showSaveBtn" style="border-style:dashed; border-color: color-mix(in srgb, var(--wsAccent) 40%, transparent); margin-bottom:14px;">+ 現在の設定を保存</button>
+    <div id="saveControls" style="display:none;">
+      <div class="save-row">
+        <input class="input" id="saveName" placeholder="セット名を入力（例：知的メガネ男子・白衣・図書館）" style="flex:1;">
+        <button class="save-btn" id="saveBtn">保存</button>
+        <button class="cancel-btn" id="cancelSaveBtn">キャンセル</button>
+      </div>
+    </div>
+    <div id="savedEmpty" class="note">まだ保存されたセットはありません。</div>
+    <div class="saved-list" id="savedList"></div>
+  </div>
+</main>
+
+<script>
+const QUALITY_PRESETS = [
+  { id: "light", label: "軽量", tags: "best quality" },
+  { id: "standard", label: "標準品質", tags: "masterpiece, best quality" },
+  { id: "anime", label: "アニメ標準", tags: "masterpiece, best quality, anime illustration" },
+  { id: "hd", label: "高精細", tags: "masterpiece, best quality, highly detailed, detailed illustration" },
+  { id: "beautiful", label: "美麗イラスト", tags: "masterpiece, best quality, beautiful detailed illustration, highly detailed" },
+  { id: "semianime", label: "セミアニメ", tags: "masterpiece, best quality, anime illustration, semi-realistic anime style" },
+];
+
+const ENHANCEMENT_GROUPS = [
+  { label: "顔まわり", tags: [
+    { jp: "顔の描き込み", en: "detailed face" },
+    { jp: "くっきりした顔立ち", en: "clear facial features" },
+    { jp: "洗練された顔の描写", en: "refined facial details" },
+    { jp: "美しい顔", en: "beautiful face" },
+  ]},
+  { label: "目まわり", tags: [
+    { jp: "目の描き込み", en: "detailed eyes" },
+    { jp: "虹彩の描き込み", en: "detailed irises" },
+    { jp: "くっきりしたハイライト", en: "clear eye highlights" },
+    { jp: "発光する瞳", en: "luminous eyes" },
+  ]},
+  { label: "まぶた・まつ毛", tags: [
+    { jp: "くっきりしたまぶた", en: "defined eyelids" },
+    { jp: "二重まぶた", en: "visible eyelid crease" },
+    { jp: "陰影のあるまぶた", en: "shaded eyelids" },
+    { jp: "長いまつ毛", en: "long eyelashes" },
+  ]},
+  { label: "髪まわり", tags: [
+    { jp: "髪の描き込み", en: "detailed hair" },
+    { jp: "柔らかい髪の質感", en: "soft hair texture" },
+    { jp: "なびく髪", en: "flowing hair" },
+    { jp: "髪の毛一本一本", en: "detailed hair strands" },
+  ]},
+  { label: "衣装まわり", tags: [
+    { jp: "衣装の描き込み", en: "detailed outfit" },
+    { jp: "服の描き込み", en: "detailed clothing" },
+    { jp: "衣装ディテール", en: "refined clothing details" },
+    { jp: "精緻なコスチューム", en: "intricate costume details" },
+  ]},
+  { label: "背景まわり", tags: [
+    { jp: "背景の描き込み", en: "detailed background" },
+    { jp: "情報量の多い背景", en: "rich background details" },
+    { jp: "雰囲気のある背景", en: "atmospheric background" },
+    { jp: "被写界深度", en: "depth of field" },
+  ]},
+  { label: "光・雰囲気", tags: [
+    { jp: "柔らかい光", en: "soft lighting" },
+    { jp: "映画的な光", en: "cinematic lighting" },
+    { jp: "繊細な光", en: "delicate lighting" },
+    { jp: "洗練された雰囲気", en: "refined atmosphere" },
+  ]},
+  { label: "線画・塗り", tags: [
+    { jp: "クリーンな主線", en: "clean lineart" },
+    { jp: "くっきりした線", en: "crisp linework" },
+    { jp: "セミマット塗り", en: "semi-matte coloring" },
+    { jp: "柔らかいシェーディング", en: "soft shading" },
+  ]},
+  { label: "手まわり", tags: [
+    { jp: "美しい手", en: "beautiful hands" },
+    { jp: "手の描き込み", en: "detailed hands" },
+  ]},
+];
+
+const STORAGE_KEY = "pixai_prompt_workspace_saved_sets_v1";
+
+const state = {
+  qualityPreset: "",
+  additionalTags: "",
+  characterPrompt: "",
+  outfitPrompt: "",
+  posePrompt: "",
+  backgroundPrompt: "",
+  enhancementTags: [],
+  savedSets: loadSavedSets(),
+  copied: false,
+};
+
+function loadSavedSets() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter(p => p && typeof p.name === 'string') : [];
+  } catch { return []; }
+}
+function saveSavedSets() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.savedSets)); } catch {}
+}
+function qualityString() {
+  return state.qualityPreset ? (QUALITY_PRESETS.find(q => q.id === state.qualityPreset)?.tags || "") : "";
+}
+function buildFinalPrompt() {
+  const parts = [
+    qualityString(),
+    state.additionalTags.trim(),
+    state.characterPrompt.trim(),
+    state.outfitPrompt.trim(),
+    state.posePrompt.trim(),
+    state.backgroundPrompt.trim(),
+    state.enhancementTags.join(", "),
+  ].filter(Boolean);
+
+  const allTags = parts.join(", ").split(",").map(t => t.trim()).filter(Boolean);
+  const deduped = [...new Set(allTags)];
+  return deduped.join(", ");
+}
+function renderQuality() {
+  const row = document.getElementById('qualityRow');
+  row.innerHTML = '';
+  QUALITY_PRESETS.forEach(q => {
+    const btn = document.createElement('button');
+    btn.className = 'quality-chip' + (state.qualityPreset === q.id ? ' active' : '');
+    btn.textContent = q.label;
+    btn.title = q.tags;
+    btn.onclick = () => { state.qualityPreset = state.qualityPreset === q.id ? '' : q.id; renderAll(); };
+    row.appendChild(btn);
+  });
+  document.getElementById('qualityPreview').textContent = state.qualityPreset ? `→ ${qualityString()}` : '';
+}
+function renderEnhancements() {
+  const area = document.getElementById('enhanceArea');
+  area.innerHTML = '';
+  ENHANCEMENT_GROUPS.forEach(group => {
+    const wrap = document.createElement('div');
+    wrap.className = 'enhance-group';
+    const lab = document.createElement('div');
+    lab.className = 'enhance-group-label';
+    lab.textContent = group.label;
+    wrap.appendChild(lab);
+    const row = document.createElement('div');
+    row.className = 'chip-row';
+    group.tags.forEach(tag => {
+      const btn = document.createElement('button');
+      btn.className = 'chip' + (state.enhancementTags.includes(tag.en) ? ' active' : '');
+      btn.textContent = tag.jp;
+      btn.title = tag.en;
+      btn.onclick = () => {
+        if (state.enhancementTags.includes(tag.en)) {
+          state.enhancementTags = state.enhancementTags.filter(t => t !== tag.en);
+        } else {
+          state.enhancementTags = [...state.enhancementTags, tag.en];
+        }
+        renderAll();
+      };
+      row.appendChild(btn);
+    });
+    wrap.appendChild(row);
+    area.appendChild(wrap);
+  });
+  const selected = document.getElementById('enhanceSelected');
+  selected.innerHTML = '';
+  state.enhancementTags.forEach(t => {
+    const span = document.createElement('span');
+    span.className = 'tag-badge';
+    span.textContent = t;
+    selected.appendChild(span);
+  });
+}
+function renderFinal() {
+  const final = buildFinalPrompt();
+  const out = document.getElementById('finalPrompt');
+  out.value = final || '（各欄を入力するとここに Final Prompt が出力されます）';
+}
+function renderSavedSets() {
+  const list = document.getElementById('savedList');
+  const empty = document.getElementById('savedEmpty');
+  list.innerHTML = '';
+  empty.style.display = state.savedSets.length ? 'none' : 'block';
+  state.savedSets.forEach(set => {
+    const item = document.createElement('div');
+    item.className = 'saved-item';
+    item.innerHTML = `<div class="saved-name"></div><div class="saved-date"></div>`;
+    item.querySelector('.saved-name').textContent = set.name;
+    item.querySelector('.saved-date').textContent = set.savedAt || '';
+    const loadBtn = document.createElement('button');
+    loadBtn.className = 'load-btn';
+    loadBtn.textContent = '読み込む';
+    loadBtn.onclick = () => {
+      state.qualityPreset = set.qualityPreset || '';
+      state.additionalTags = set.additionalTags || '';
+      state.characterPrompt = set.characterPrompt || '';
+      state.outfitPrompt = set.outfitPrompt || '';
+      state.posePrompt = set.posePrompt || '';
+      state.backgroundPrompt = set.backgroundPrompt || '';
+      state.enhancementTags = Array.isArray(set.enhancementTags) ? [...set.enhancementTags] : [];
+      syncInputs();
+      renderAll();
+    };
+    const delBtn = document.createElement('button');
+    delBtn.className = 'delete-btn';
+    delBtn.textContent = '×';
+    delBtn.onclick = () => {
+      state.savedSets = state.savedSets.filter(s => s.id !== set.id);
+      saveSavedSets();
+      renderSavedSets();
+    };
+    item.appendChild(loadBtn);
+    item.appendChild(delBtn);
+    list.appendChild(item);
+  });
+}
+function syncInputs() {
+  document.getElementById('additionalTags').value = state.additionalTags;
+  document.getElementById('characterPrompt').value = state.characterPrompt;
+  document.getElementById('outfitPrompt').value = state.outfitPrompt;
+  document.getElementById('posePrompt').value = state.posePrompt;
+  document.getElementById('backgroundPrompt').value = state.backgroundPrompt;
+}
+function renderAll() {
+  renderQuality();
+  renderEnhancements();
+  renderFinal();
+  renderSavedSets();
+  document.getElementById('copyBtn').classList.toggle('done', state.copied);
+  document.getElementById('copyBtn').textContent = state.copied ? '✓ コピー済' : 'コピー';
+}
+function resetAll() {
+  state.qualityPreset = '';
+  state.additionalTags = '';
+  state.characterPrompt = '';
+  state.outfitPrompt = '';
+  state.posePrompt = '';
+  state.backgroundPrompt = '';
+  state.enhancementTags = [];
+  syncInputs();
+  renderAll();
+}
+function fallbackCopy(text) {
+  try {
+    const el = document.createElement('textarea');
+    el.value = text; el.style.position = 'fixed'; el.style.opacity = '0';
+    document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el);
+    state.copied = true; renderAll(); setTimeout(() => { state.copied = false; renderAll(); }, 1800);
+  } catch {
+    alert('コピーに失敗しました。出力欄を手動で選択してください。');
+  }
+}
+function copyFinal() {
+  const final = buildFinalPrompt();
+  if (!final) return;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(final).then(() => {
+      state.copied = true; renderAll(); setTimeout(() => { state.copied = false; renderAll(); }, 1800);
+    }).catch(() => fallbackCopy(final));
+  } else {
+    fallbackCopy(final);
+  }
+}
+function showSaveControls(show) {
+  document.getElementById('saveControls').style.display = show ? 'block' : 'none';
+  document.getElementById('showSaveBtn').style.display = show ? 'none' : 'inline-block';
+  if (!show) document.getElementById('saveName').value = '';
+}
+function saveCurrentSet() {
+  const name = document.getElementById('saveName').value.trim();
+  if (!name) return;
+  const newSet = {
+    id: Date.now().toString(),
+    name,
+    qualityPreset: state.qualityPreset,
+    additionalTags: state.additionalTags,
+    characterPrompt: state.characterPrompt,
+    outfitPrompt: state.outfitPrompt,
+    posePrompt: state.posePrompt,
+    backgroundPrompt: state.backgroundPrompt,
+    enhancementTags: [...state.enhancementTags],
+    finalPrompt: buildFinalPrompt(),
+    savedAt: new Date().toLocaleString('ja-JP'),
+  };
+  state.savedSets = [newSet, ...state.savedSets];
+  saveSavedSets();
+  showSaveControls(false);
+  renderSavedSets();
+}
+
+document.getElementById('resetBtn').onclick = resetAll;
+document.getElementById('copyBtn').onclick = copyFinal;
+document.getElementById('showSaveBtn').onclick = () => showSaveControls(true);
+document.getElementById('cancelSaveBtn').onclick = () => showSaveControls(false);
+document.getElementById('saveBtn').onclick = saveCurrentSet;
+document.getElementById('saveName').addEventListener('keydown', (e) => { if (e.key === 'Enter') saveCurrentSet(); });
+
+document.getElementById('additionalTags').addEventListener('input', e => { state.additionalTags = e.target.value; renderFinal(); });
+document.getElementById('characterPrompt').addEventListener('input', e => { state.characterPrompt = e.target.value; renderFinal(); });
+document.getElementById('outfitPrompt').addEventListener('input', e => { state.outfitPrompt = e.target.value; renderFinal(); });
+document.getElementById('posePrompt').addEventListener('input', e => { state.posePrompt = e.target.value; renderFinal(); });
+document.getElementById('backgroundPrompt').addEventListener('input', e => { state.backgroundPrompt = e.target.value; renderFinal(); });
+
+syncInputs();
+renderAll();
+</script>
+</body>
+</html>
